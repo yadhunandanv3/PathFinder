@@ -11,7 +11,7 @@ export default function Login() {
   const [apiSuccess, setApiSuccess] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm();
   const selectedRole = watch('role');
 
   const handleFormSubmit = async (data) => {
@@ -23,14 +23,21 @@ export default function Login() {
       if (mode === 'login') {
         await login(data.email, data.password);
       } else {
-        await registerAuth({
+        const { authAPI } = await import('../services/api');
+        const response = await authAPI.register({
           name: data.name,
           email: data.email,
           password: data.password,
           role: data.role || 'Visitor',
           adminSecretKey: data.adminSecretKey || undefined,
         });
-        setApiSuccess('Account created and session initialized!');
+        
+        if (response.success) {
+          setApiSuccess('User created successfully! Please log in with your credentials.');
+          setMode('login');
+          setValue('email', data.email);
+          setValue('password', '');
+        }
       }
     } catch (err) {
       const msg = err?.message || err?.response?.data?.message || 'Authentication failed';
