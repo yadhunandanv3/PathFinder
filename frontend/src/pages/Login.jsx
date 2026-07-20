@@ -17,7 +17,7 @@ export default function Login() {
     try {
       await login(data.email, data.password);
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Login failed. Please check credentials.';
+      const msg = err?.message || err?.response?.data?.message || 'Invalid email or password';
       setApiError(msg);
     } finally {
       setSubmitting(false);
