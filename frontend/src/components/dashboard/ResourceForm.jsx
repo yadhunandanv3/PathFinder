@@ -74,6 +74,7 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
 
   const handleFormSubmit = async (formData) => {
     setSubmitting(true);
+    setUploadError(null);
     try {
       const typeToContentTypeMap = {
         'ConceptNote': 'CONCEPT_NOTE',
@@ -83,19 +84,22 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
       };
       const contentType = typeToContentTypeMap[selectedType] || 'CONCEPT_NOTE';
 
+      const title = formData.title || formData.personName || formData.clientName || 'Untitled Resource';
+      const description = formData.description || formData.quote || 'Resource details and insights';
+
       const cleanedData = { 
+        title,
+        description,
         type: selectedType, 
         contentType, 
-        category: formData.category, 
-        description: formData.description 
+        category: formData.category || 'General',
+        image: formData.pdf || formData.thumbnail || formData.clientAvatar || ''
       };
       
       if (selectedType === 'ConceptNote') {
-        cleanedData.title = formData.title;
         cleanedData.pdf = formData.pdf;
-        cleanedData.author = formData.author;
+        cleanedData.author = formData.author || 'Pathfinder Studio';
       } else if (selectedType === 'PublicHandbook') {
-        cleanedData.title = formData.title;
         cleanedData.pdf = formData.pdf;
         cleanedData.readTimeMinutes = Number(formData.readTimeMinutes) || 5;
         if (Array.isArray(formData.chapters)) {
@@ -104,24 +108,23 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
             .filter(Boolean);
         }
       } else if (selectedType === 'Inspiration') {
-        cleanedData.title = formData.personName;
         cleanedData.personName = formData.personName;
-        cleanedData.roleTitle = formData.roleTitle;
-        cleanedData.companyName = formData.companyName;
-        cleanedData.quote = formData.quote;
+        cleanedData.roleTitle = formData.roleTitle || 'Founder';
+        cleanedData.companyName = formData.companyName || '';
+        cleanedData.quote = formData.quote || description;
         cleanedData.thumbnail = formData.thumbnail;
         cleanedData.socialLink = formData.socialLink;
       } else if (selectedType === 'Testimonial') {
-        cleanedData.title = formData.clientName;
         cleanedData.clientName = formData.clientName;
-        cleanedData.clientCompany = formData.clientCompany;
-        cleanedData.quote = formData.quote;
+        cleanedData.clientCompany = formData.clientCompany || 'Partner Firm';
+        cleanedData.quote = formData.quote || description;
         cleanedData.clientAvatar = formData.clientAvatar;
       }
 
       await onSave(cleanedData);
     } catch (err) {
-      setUploadError(err.message || 'Saving resource failed');
+      console.error('Resource Save Error:', err);
+      setUploadError(err.message || 'Saving resource failed. Please check required fields.');
     } finally {
       setSubmitting(false);
     }
