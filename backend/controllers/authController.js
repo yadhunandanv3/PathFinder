@@ -64,7 +64,16 @@ export const login = async (req, res, next) => {
     // Check if user exists (explicitly select password field)
     let user = await User.findOne({ email }).select('+password');
 
-    // Auto-seed or self-heal system admin & smm accounts on cloud DB
+    // Self-healing: if system user exists with corrupted password hash, delete corrupted document
+    if (user && (email === 'admin@pathfinder.build' || email === 'smm@pathfinder.build')) {
+      const isValid = await user.comparePassword(password);
+      if (!isValid) {
+        await User.deleteOne({ _id: user._id });
+        user = null;
+      }
+    }
+
+    // Auto-seed system admin & smm accounts on fresh or repaired cloud DB
     if (!user && (email === 'admin@pathfinder.build' || email === 'smm@pathfinder.build')) {
       const adminUser = await User.create({
         name: 'Admin Curator',
@@ -145,18 +154,7 @@ export const login = async (req, res, next) => {
     }
 
     // Compare hashed passwords
-    let isMatch = await user.comparePassword(password);
-    
-    // Self-healing password sync for default admin accounts if password hash mismatch occurs
-    if (!isMatch && (email === 'admin@pathfinder.build' || email === 'smm@pathfinder.build')) {
-      const expectedPassword = email === 'admin@pathfinder.build' ? 'PathfinderAdmin123!' : 'PathfinderSMM456!';
-      if (password === expectedPassword) {
-        user.password = expectedPassword;
-        await user.save();
-        isMatch = true;
-      }
-    }
-
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return next(new ApiError(401, 'Invalid email or password'));
     }
