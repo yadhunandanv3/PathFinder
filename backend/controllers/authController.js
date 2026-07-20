@@ -73,12 +73,16 @@ export const login = async (req, res, next) => {
         await User.deleteMany({ email });
         const targetRole = email === 'admin@pathfinder.build' ? 'Admin' : 'Social Media Manager';
         const targetName = email === 'admin@pathfinder.build' ? 'Admin Curator' : 'SMM Curator';
-        user = await User.create({
+        
+        await User.create({
           name: targetName,
           email,
           password,
           role: targetRole,
         });
+
+        // Re-query created user with explicitly selected password field
+        user = await User.findOne({ email }).select('+password');
 
         // Also ensure categories and resources are seeded if missing
         const Category = (await import('../models/Category.js')).default;
