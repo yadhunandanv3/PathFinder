@@ -128,7 +128,8 @@ export default function Dashboard() {
     }
   };
 
-  const isSMM = user?.role !== 'admin';
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+  const isSMM = !isAdmin;
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 py-6 lg:py-10 z-10 flex flex-col lg:flex-row gap-8 select-none">

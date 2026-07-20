@@ -48,7 +48,7 @@ export default function CategoryManager({ categories, onRefresh }) {
     }
   };
 
-  const isSMM = user?.role !== 'admin';
+  const isSMM = user?.role?.toLowerCase() !== 'admin';
 
   return (
     <div className="rounded-3xl bg-white border border-slate-100 shadow-pf-card p-6 flex flex-col gap-6 select-none">

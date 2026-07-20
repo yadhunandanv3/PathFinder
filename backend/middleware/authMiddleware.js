@@ -32,14 +32,20 @@ export const protect = async (req, res, next) => {
   }
 };
 
-// Check role clearances
+// Check role clearances with normalized role comparison
 export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return next(new ApiError(500, 'Authorization guard applied before protect handler'));
     }
-    if (!roles.includes(req.user.role)) {
-      return next(new ApiError(403, `User role '${req.user.role}' is not authorized to perform this operation`));
+
+    const userRole = req.user.role;
+    const normalizedUserRole = (userRole === 'SMM' || userRole === 'Social Media Manager') ? 'Social Media Manager' : userRole;
+    
+    const allowedRoles = roles.map(r => (r === 'SMM' || r === 'Social Media Manager') ? 'Social Media Manager' : r);
+
+    if (!allowedRoles.includes(normalizedUserRole)) {
+      return next(new ApiError(403, `User role '${userRole}' is not authorized to perform this operation`));
     }
     next();
   };
