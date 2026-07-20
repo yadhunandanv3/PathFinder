@@ -11,9 +11,12 @@ const generateToken = (id, role) => {
 
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password, role, adminSecretKey } = req.body;
-
+    const { name, email, password, role } = req.body;
     const cleanEmail = email ? email.trim().toLowerCase() : '';
+
+    if (!name || !email || !password) {
+      return next(new ApiError(400, 'Name, email and password are required'));
+    }
 
     // Verify duplicate emails
     const userExists = await User.findOne({ email: cleanEmail });
@@ -21,20 +24,11 @@ export const register = async (req, res, next) => {
       return next(new ApiError(400, 'User with this email already exists'));
     }
 
-    // RBAC: Role assignment handling with secret key fallback
-    let finalRole = role || 'Visitor';
-    if (role && role !== 'Visitor') {
-      const expectedAdminKey = process.env.ADMIN_SECRET_KEY || 'pathfinder_admin_master_creation_secret_key_99';
-      if (adminSecretKey && adminSecretKey !== expectedAdminKey) {
-        return next(new ApiError(403, 'Invalid master secret key for privileged role'));
-      }
-    }
-
     const user = await User.create({
       name,
       email: cleanEmail,
       password,
-      role: finalRole,
+      role: role || 'Visitor',
     });
 
     const token = generateToken(user._id, user.role);
@@ -63,6 +57,10 @@ export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const cleanEmail = email ? email.trim().toLowerCase() : '';
+
+    if (!email || !password) {
+      return next(new ApiError(400, 'Email and password are required'));
+    }
 
     // Standard User Authentication flow from MongoDB
     const user = await User.findOne({ email: cleanEmail }).select('+password');
