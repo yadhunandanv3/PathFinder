@@ -2,76 +2,86 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
-import mongoose from 'mongoose';
+import path from 'path';
 import connectDB from './config/db.js';
-import errorHandler from './middleware/errorMiddleware.js';
-import ApiResponse from './utils/apiResponse.js';
-import swaggerUi from 'swagger-ui-express';
-import swaggerDocument from './config/swagger.js';
 import authRoutes from './routes/authRoutes.js';
+import contentRoutes from './routes/contentRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import resourceRoutes from './routes/resourceRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import errorHandler from './middleware/errorHandler.js';
+import ApiResponse from './utils/apiResponse.js';
 
-// Load environmental variables
 dotenv.config();
+
+// Connect to MongoDB Atlas
+connectDB();
 
 const app = express();
 
-// Base Middlewares - Deactivate CSP limiters in helmet so that Swagger UI styles load
-app.use(helmet({
-  contentSecurityPolicy: false
-}));
-app.use(cors({
-  origin: process.env.CLIENT_URL || '*',
-  credentials: true
-}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Security Header Middlewares
+app.use(helmet({ crossOriginResourcePolicy: false }));
 
-// Serve static upload directory
-app.use('/uploads', express.static('uploads'));
+// Cross-Origin Resource Sharing (CORS)
+app.use(
+  cors({
+    origin: '*',
+    credentials: true,
+  })
+);
 
-// DB Connection
-if (process.env.NODE_ENV !== 'test') {
-  connectDB();
-}
+// Express Body Parsing Middlewares
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Swagger Documentation Page
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Static file serving for uploads
+const uploadsDir = path.join(process.cwd(), 'uploads');
+app.use('/uploads', express.static(uploadsDir));
 
-// Health Check API
-app.get('/api/health', (req, res) => {
-  res.status(200).json(new ApiResponse(200, {
-    uptime: process.uptime(),
-    timestamp: new Date(),
-    mongoDbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-  }, 'Server is healthy'));
+// Health Audit Route
+app.get('/health', (req, res) => {
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        status: 'UP',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'production',
+      },
+      'Server health verified'
+    )
+  );
 });
 
-// Primary Production API Routes v1.0.3 - Category Auto-Creation
+// Primary Production API Route Mounts
 app.use('/api/auth', authRoutes);
+app.use('/api/content', contentRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Fallback mounts for non-prefixed routes
 app.use('/auth', authRoutes);
+app.use('/content', contentRoutes);
+app.use('/users', userRoutes);
 app.use('/resources', resourceRoutes);
 app.use('/upload', uploadRoutes);
 
-// Fallback for 404
+// Centralized 404 Route Handler
 app.use((req, res, next) => {
-  res.status(404).json({ success: false, message: 'API Route Not Found' });
+  res.status(404).json({
+    statusCode: 404,
+    success: false,
+    message: 'API Route Not Found',
+    data: null,
+  });
 });
 
-// Global Error Handler
+// Centralized Error Handler Middleware
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-  });
-}
-
-export default app;
+app.listen(PORT, () => {
+  console.log(`🚀 Pathfinder RBAC Backend running in ${process.env.NODE_ENV || 'production'} mode on port ${PORT}`);
+});

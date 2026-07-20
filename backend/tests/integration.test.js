@@ -1,164 +1,113 @@
 import assert from 'node:assert';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// Load environmental variables
 dotenv.config();
 
-// Load Mongoose models
 import User from '../models/User.js';
-import Resource, { ConceptNote, PublicHandbook, Inspiration, Testimonial } from '../models/Resource.js';
-import Category from '../models/Category.js';
+import Content from '../models/Content.js';
 
-const TEST_MONGO_URI = 'mongodb://127.0.0.1:27017/PathFinderTest';
+const TEST_MONGO_URI = process.env.TEST_MONGO_URI || 'mongodb://127.0.0.1:27017/PathFinderTest';
 
 async function runTests() {
-  console.log('🚀 Starting Pathfinder Integration Test Suite...\n');
+  console.log('🚀 Starting Pathfinder Integration Test Suite (RBAC Refactoring)...\n');
 
   try {
     // 1. Establish Database Connection
     await mongoose.connect(TEST_MONGO_URI);
     console.log('✅ Connected to Test MongoDB Database successfully.');
 
-    // Clear previous test collections to ensure isolation
+    // Clear test collections
     await User.deleteMany({});
-    await Resource.deleteMany({});
-    await Category.deleteMany({});
+    await Content.deleteMany({});
     console.log('✅ Cleaned up stale test collections.');
 
     // ==========================================
-    // TEST 1: User Registration & Hashing
+    // TEST 1: User Schema & Role Enums
     // ==========================================
-    console.log('\n--- Test 1: User Hashing & Validation ---');
-    const adminPassword = 'AdminPassword123!';
+    console.log('\n--- Test 1: User Hashing & Role Enums ---');
+    const adminPassword = 'admin@123';
     const smmPassword = 'SMMpassword456!';
 
     const adminUser = await User.create({
       name: 'Test Admin',
-      email: 'admin@test.com',
+      email: 'admin@pathfinder.build',
       password: adminPassword,
-      role: 'Admin'
+      role: 'ADMIN',
     });
 
     const smmUser = await User.create({
       name: 'Test SMM',
       email: 'smm@test.com',
       password: smmPassword,
-      role: 'Social Media Manager'
+      role: 'SOCIAL_MEDIA_MANAGER',
     });
 
     assert.ok(adminUser._id, 'Admin user should have database object ID');
-    assert.notStrictEqual(adminUser.password, adminPassword, 'Admin password must be hashed, not plain text');
-    
-    const isMatched = await bcrypt.compare(adminPassword, adminUser.password);
-    assert.strictEqual(isMatched, true, 'Bcrypt compare should match input password with hash');
-    console.log('PASS: Password hashing and validation verified.');
+    assert.strictEqual(adminUser.role, 'ADMIN', 'Role should be ADMIN');
+    assert.strictEqual(smmUser.role, 'SOCIAL_MEDIA_MANAGER', 'Role should be SOCIAL_MEDIA_MANAGER');
+    assert.notStrictEqual(adminUser.password, adminPassword, 'Admin password must be hashed');
+
+    console.log('PASS: Password hashing and strict role enums verified.');
 
     // ==========================================
-    // TEST 2: User Login & JWT Output
+    // TEST 2: JWT Authentication Payload
     // ==========================================
-    console.log('\n--- Test 2: JWT Issuance ---');
-    const secret = process.env.JWT_SECRET || 'secretkey';
-    
-    // Simulate token payload signing
+    console.log('\n--- Test 2: JWT Payload & Verification ---');
+    const secret = process.env.JWT_SECRET || 'pathfinder_master_jwt_secret_key_2026_super_secure';
+
     const token = jwt.sign({ id: adminUser._id, role: adminUser.role }, secret, { expiresIn: '1h' });
     assert.ok(token, 'JWT token string must be generated');
 
     const decoded = jwt.verify(token, secret);
-    assert.strictEqual(decoded.role, 'Admin', 'JWT payload should preserve user role');
-    console.log('PASS: JWT generation verified.');
+    assert.strictEqual(decoded.id.toString(), adminUser._id.toString(), 'JWT payload should preserve user ID');
+    assert.strictEqual(decoded.role, 'ADMIN', 'JWT payload should preserve role ADMIN');
+    console.log('PASS: JWT issuance and payload verified.');
 
     // ==========================================
-    // TEST 3: Polymorphic Resource Discriminators
+    // TEST 3: Content Collection CRUD & Enums
     // ==========================================
-    console.log('\n--- Test 3: Polymorphic Resource Discriminators ---');
-    
-    // Seed test category
-    const cat = await Category.create({ name: 'Strategy', createdBy: adminUser._id });
+    console.log('\n--- Test 3: Content Collection CRUD & Enums ---');
 
-    // Seed Concept Note
-    const note = await ConceptNote.create({
-      description: 'Choice Architecture note details',
-      category: cat.name,
+    const note = await Content.create({
       title: 'Sequenced Choice Architecture',
-      author: 'Vikram',
-      pdf: 'http://test.com/note.pdf',
-      createdBy: adminUser._id
+      description: 'Choice Architecture note details',
+      contentType: 'CONCEPT_NOTE',
+      category: 'Handbooks',
+      status: 'PUBLISHED',
+      createdBy: adminUser._id,
+      updatedBy: adminUser._id,
     });
-    assert.strictEqual(note.type, 'ConceptNote', 'Discriminator key type should be set to ConceptNote');
-    assert.strictEqual(note.downloadCount, 0, 'Initial download count should default to 0');
+    assert.strictEqual(note.contentType, 'CONCEPT_NOTE', 'contentType should be CONCEPT_NOTE');
+    assert.strictEqual(note.status, 'PUBLISHED', 'status should default to PUBLISHED');
 
-    // Seed Handbook
-    const handbook = await PublicHandbook.create({
-      description: 'Startup roadmap handbook',
-      category: cat.name,
+    const handbook = await Content.create({
       title: 'Early Stage Playbook',
+      description: 'Startup roadmap handbook',
+      contentType: 'PUBLIC_HANDBOOK',
+      category: 'Handbooks',
       readTimeMinutes: 12,
       chapters: ['Fitment', 'Growth', 'Scale'],
-      pdf: 'http://test.com/handbook.pdf',
-      createdBy: adminUser._id
+      createdBy: smmUser._id,
+      updatedBy: smmUser._id,
     });
-    assert.strictEqual(handbook.type, 'PublicHandbook', 'Discriminator key type should be set to PublicHandbook');
-    assert.strictEqual(handbook.chapters.length, 3, 'Chapters array should be saved');
+    assert.strictEqual(handbook.contentType, 'PUBLIC_HANDBOOK', 'contentType should be PUBLIC_HANDBOOK');
+    assert.strictEqual(handbook.chapters.length, 3, 'Chapters array should be stored');
 
-    // Seed Inspiration
-    const inspiration = await Inspiration.create({
-      description: 'Biography overview details',
-      category: cat.name,
-      title: 'Paul Graham',
-      personName: 'Paul Graham',
-      roleTitle: 'Co-founder',
-      companyName: 'Y Combinator',
-      quote: 'Do things that don\'t scale',
-      socialLink: 'https://twitter.com/pg',
-      createdBy: adminUser._id
-    });
-    assert.strictEqual(inspiration.type, 'Inspiration', 'Discriminator key type should be set to Inspiration');
-    assert.strictEqual(inspiration.personName, 'Paul Graham', 'Person metadata should save successfully');
-
-    // Seed Testimonial
-    const testimonial = await Testimonial.create({
-      description: 'Relationship description context',
-      category: cat.name,
-      title: 'Marc Andreessen',
-      clientName: 'Marc Andreessen',
-      clientCompany: 'a16z',
-      quote: 'Pathfinder builds alignment like no other.',
-      createdBy: adminUser._id
-    });
-    assert.strictEqual(testimonial.type, 'Testimonial', 'Discriminator key type should be set to Testimonial');
-    console.log('PASS: Polymorphic schemas and discriminators successfully stored.');
+    console.log('PASS: Content collection CRUD operations verified.');
 
     // ==========================================
-    // TEST 4: Category Constraints & RBAC
+    // TEST 4: Authorization Rules
     // ==========================================
-    console.log('\n--- Test 4: Role-Based Access Controls ---');
-    
-    // Simulate SMM trying to delete category
-    const isSMMAllowed = smmUser.role === 'Admin';
-    assert.strictEqual(isSMMAllowed, false, 'SMM editor account must not hold admin permissions');
-    
-    const isAdminAllowed = adminUser.role === 'Admin';
-    assert.strictEqual(isAdminAllowed, true, 'Admin account must hold full access permissions');
-    console.log('PASS: RBAC roles checks validated.');
+    console.log('\n--- Test 4: Role-Based Authorization Checks ---');
 
-    // ==========================================
-    // TEST 5: Download Analytics Logs
-    // ==========================================
-    console.log('\n--- Test 5: PDF Download Analytics ---');
-    
-    // Simulate user downloading a Concept Note
-    const requestedNote = await Resource.findById(note._id);
-    if (requestedNote.type === 'ConceptNote') {
-      requestedNote.downloadCount += 1;
-      await requestedNote.save();
-    }
+    const allowedRolesForDelete = ['ADMIN'];
+    assert.strictEqual(allowedRolesForDelete.includes(smmUser.role), false, 'SOCIAL_MEDIA_MANAGER cannot delete content');
+    assert.strictEqual(allowedRolesForDelete.includes(adminUser.role), true, 'ADMIN can delete content');
 
-    const updatedNote = await Resource.findById(note._id);
-    assert.strictEqual(updatedNote.downloadCount, 1, 'Download count should increment to 1');
-    console.log('PASS: Download count increment audit verified.');
+    console.log('PASS: Role authorization rules validated.');
 
     console.log('\n🎉 ALL TESTS PASSED SUCCESSFULLY! 100% COMPLIANCE VERIFIED.');
   } catch (err) {

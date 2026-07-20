@@ -75,8 +75,20 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
   const handleFormSubmit = async (formData) => {
     setSubmitting(true);
     try {
-      // Clean up fields that don't match selected type before saving
-      const cleanedData = { type: selectedType, category: formData.category, description: formData.description };
+      const typeToContentTypeMap = {
+        'ConceptNote': 'CONCEPT_NOTE',
+        'PublicHandbook': 'PUBLIC_HANDBOOK',
+        'Inspiration': 'INSPIRATION',
+        'Testimonial': 'TESTIMONIAL'
+      };
+      const contentType = typeToContentTypeMap[selectedType] || 'CONCEPT_NOTE';
+
+      const cleanedData = { 
+        type: selectedType, 
+        contentType, 
+        category: formData.category, 
+        description: formData.description 
+      };
       
       if (selectedType === 'ConceptNote') {
         cleanedData.title = formData.title;

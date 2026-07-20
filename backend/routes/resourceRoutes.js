@@ -1,32 +1,25 @@
 import express from 'express';
 import {
-  getResources,
-  getResourceById,
-  createResource,
-  updateResource,
-  deleteResource,
-  getCategories,
-  createCategory,
-  deleteCategory,
-} from '../controllers/resourceController.js';
-import { protect, authorize } from '../middleware/authMiddleware.js';
+  createContent,
+  getAllContent,
+  getContentById,
+  updateContent,
+  deleteContent,
+} from '../controllers/contentController.js';
+import authenticate from '../middleware/authenticate.js';
+import authorize from '../middleware/authorize.js';
 
 const router = express.Router();
 
-// Public Visitor Endpoints
-router.get('/', getResources);
-router.get('/categories', getCategories);
-router.get('/:id', getResourceById);
+// Public Visitor & Staff read endpoints
+router.get('/', getAllContent);
+router.get('/:id', getContentById);
 
-// Admin & SMM Resource Creation / Edit
-router.post('/', protect, authorize('Admin', 'Social Media Manager'), createResource);
-router.put('/:id', protect, authorize('Admin', 'Social Media Manager'), updateResource);
+// Staff Content creation & edition (ADMIN, SOCIAL_MEDIA_MANAGER)
+router.post('/', authenticate, authorize('ADMIN', 'SOCIAL_MEDIA_MANAGER'), createContent);
+router.put('/:id', authenticate, authorize('ADMIN', 'SOCIAL_MEDIA_MANAGER'), updateContent);
 
-// Admin Only Resource Deletion
-router.delete('/:id', protect, authorize('Admin'), deleteResource);
-
-// Admin Only Category Management
-router.post('/categories', protect, authorize('Admin'), createCategory);
-router.delete('/categories/:id', protect, authorize('Admin'), deleteCategory);
+// ADMIN Only Content Deletion
+router.delete('/:id', authenticate, authorize('ADMIN'), deleteContent);
 
 export default router;

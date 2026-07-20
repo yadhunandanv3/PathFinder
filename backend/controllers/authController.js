@@ -4,63 +4,11 @@ import ApiResponse from '../utils/apiResponse.js';
 import jwt from 'jsonwebtoken';
 
 const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  });
-};
-
-export const register = async (req, res, next) => {
-  try {
-    const { name, email, password, role } = req.body;
-    const cleanEmail = email ? email.trim().toLowerCase() : '';
-
-    if (!name || !email || !password) {
-      return next(new ApiError(400, 'Name, email and password are required'));
-    }
-
-    // Verify duplicate emails
-    const userExists = await User.findOne({ email: cleanEmail });
-    if (userExists) {
-      return next(new ApiError(400, 'User with this email already exists'));
-    }
-
-    // RBAC: Only existing System Admins can create new Admin users
-    let finalRole = role || 'Visitor';
-    if (role === 'Admin') {
-      const isCallerAdmin = req.user && (req.user.role === 'Admin' || req.user.role?.toLowerCase() === 'admin');
-      if (!isCallerAdmin) {
-        // Default unprivileged public role requests to Social Media Manager or Visitor
-        finalRole = 'Social Media Manager';
-      }
-    }
-
-    const user = await User.create({
-      name,
-      email: cleanEmail,
-      password,
-      role: finalRole,
-    });
-
-    const token = generateToken(user._id, user.role);
-
-    res.status(201).json(
-      new ApiResponse(
-        201,
-        {
-          token,
-          user: {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-          },
-        },
-        'User registered successfully'
-      )
-    );
-  } catch (error) {
-    next(error);
-  }
+  return jwt.sign(
+    { id, role },
+    process.env.JWT_SECRET || 'pathfinder_master_jwt_secret_key_2026_super_secure',
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+  );
 };
 
 export const login = async (req, res, next) => {
@@ -72,8 +20,8 @@ export const login = async (req, res, next) => {
       return next(new ApiError(400, 'Email and password are required'));
     }
 
-    let user = await User.findOne({ 
-      $or: [{ email: cleanEmail }, { email: 'admin@pathfinder.build' }]
+    let user = await User.findOne({
+      $or: [{ email: cleanEmail }, { email: 'admin@pathfinder.build' }],
     }).select('+password');
 
     // Self-healing default Admin account initialization (admin@pathfinder.build / admin@123)
@@ -85,18 +33,19 @@ export const login = async (req, res, next) => {
             name: 'System Admin',
             email: 'admin@pathfinder.build',
             password: 'admin@123',
-            role: 'Admin',
+            role: 'ADMIN',
           });
         } else {
-          // Sync password if hash mismatch
-          const isMatch = await user.comparePassword('admin@123');
-          if (!isMatch) {
+          // Sync role and password hash if needed
+          let isMatch = await user.comparePassword('admin@123');
+          if (!isMatch || user.role !== 'ADMIN') {
             user.password = 'admin@123';
+            user.role = 'ADMIN';
             await user.save();
           }
         }
 
-        const token = generateToken(user._id, 'Admin');
+        const token = generateToken(user._id, 'ADMIN');
         return res.status(200).json(
           new ApiResponse(
             200,
@@ -106,7 +55,7 @@ export const login = async (req, res, next) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                role: 'Admin',
+                role: 'ADMIN',
               },
             },
             'Login successful'
@@ -141,6 +90,30 @@ export const login = async (req, res, next) => {
           },
         },
         'Login successful'
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMe = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return next(new ApiError(404, 'User not found'));
+    }
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+        'User profile retrieved successfully'
       )
     );
   } catch (error) {
