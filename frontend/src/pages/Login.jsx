@@ -237,18 +237,6 @@ export default function Login() {
 
         </form>
 
-        {/* Default Admin Credentials Hint */}
-        {mode === 'login' && (
-          <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-2xl text-center">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">
-              Default System Admin Credentials
-            </span>
-            <span className="text-xs font-semibold text-pf-dark block">
-              Username: <code className="bg-slate-200 px-1.5 py-0.5 rounded font-mono text-[11px]">admin@pathfinder.build</code> | Password: <code className="bg-slate-200 px-1.5 py-0.5 rounded font-mono text-[11px]">admin@123</code>
-            </span>
-          </div>
-        )}
-
         {/* Toggle Footer */}
         <div className="text-center mt-6 pt-4 border-t border-slate-100">
           {mode === 'login' ? (

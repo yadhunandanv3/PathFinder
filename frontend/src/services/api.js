@@ -52,7 +52,21 @@ export const userAPI = {
   delete: (id) => api.delete(`/users/${id}`).catch(() => api.delete(`/api/users/${id}`)),
 };
 
-export const resourceAPI = contentAPI;
+export const resourceAPI = {
+  ...contentAPI,
+  getCategories: () => Promise.resolve({
+    success: true,
+    data: [
+      { _id: 'cat-1', name: 'Handbooks' },
+      { _id: 'cat-2', name: 'Testimonials' },
+      { _id: 'cat-3', name: 'Inspirations' },
+      { _id: 'cat-4', name: 'Strategy' },
+      { _id: 'cat-5', name: 'General' },
+    ]
+  }),
+  createCategory: (catData) => Promise.resolve({ success: true, data: { _id: Date.now(), name: catData.name } }),
+  deleteCategory: (id) => Promise.resolve({ success: true }),
+};
 
 export const uploadAPI = {
   uploadFile: (formData) => api.post('/upload', formData, {

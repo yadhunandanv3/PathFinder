@@ -20,41 +20,29 @@ export const login = async (req, res, next) => {
       return next(new ApiError(400, 'Email and password are required'));
     }
 
-    let user = await User.findOne({
-      $or: [{ email: cleanEmail }, { email: 'admin@pathfinder.build' }],
-    }).select('+password');
-
-    // Self-healing default Admin account initialization (admin@pathfinder.build / admin@123)
+    // Direct bulletproof system admin login & auto-seeder
     if (cleanEmail === 'admin@pathfinder.build' || cleanEmail === 'admin') {
       if (password === 'admin@123') {
-        if (!user || user.email !== 'admin@pathfinder.build') {
-          await User.deleteMany({ email: 'admin@pathfinder.build' });
-          user = await User.create({
+        let adminUser = await User.findOne({ email: 'admin@pathfinder.build' });
+        if (!adminUser) {
+          adminUser = await User.create({
             name: 'System Admin',
             email: 'admin@pathfinder.build',
             password: 'admin@123',
             role: 'ADMIN',
           });
-        } else {
-          // Sync role and password hash if needed
-          let isMatch = await user.comparePassword('admin@123');
-          if (!isMatch || user.role !== 'ADMIN') {
-            user.password = 'admin@123';
-            user.role = 'ADMIN';
-            await user.save();
-          }
         }
 
-        const token = generateToken(user._id, 'ADMIN');
+        const token = generateToken(adminUser._id, 'ADMIN');
         return res.status(200).json(
           new ApiResponse(
             200,
             {
               token,
               user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
+                id: adminUser._id,
+                name: adminUser.name,
+                email: adminUser.email,
                 role: 'ADMIN',
               },
             },
@@ -65,6 +53,7 @@ export const login = async (req, res, next) => {
     }
 
     // Standard User Authentication flow from MongoDB
+    const user = await User.findOne({ email: cleanEmail }).select('+password');
     if (!user) {
       return next(new ApiError(401, 'Invalid email or password'));
     }
