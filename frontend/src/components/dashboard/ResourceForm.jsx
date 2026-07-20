@@ -85,8 +85,12 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
       } else if (selectedType === 'PublicHandbook') {
         cleanedData.title = formData.title;
         cleanedData.pdf = formData.pdf;
-        cleanedData.readTimeMinutes = Number(formData.readTimeMinutes);
-        cleanedData.chapters = formData.chapters;
+        cleanedData.readTimeMinutes = Number(formData.readTimeMinutes) || 5;
+        if (Array.isArray(formData.chapters)) {
+          cleanedData.chapters = formData.chapters
+            .map(c => (typeof c === 'string' ? c : (c.value || c.title || c.chapter || '')))
+            .filter(Boolean);
+        }
       } else if (selectedType === 'Inspiration') {
         cleanedData.title = formData.personName;
         cleanedData.personName = formData.personName;
