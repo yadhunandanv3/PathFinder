@@ -48,7 +48,12 @@ app.get('/api/health', (req, res) => {
   }, 'Server is healthy'));
 });
 
-// Mount Routes
+// Mount API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/resources', resourceRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// Fallback mounts for non-prefixed routes
 app.use('/auth', authRoutes);
 app.use('/resources', resourceRoutes);
 app.use('/upload', uploadRoutes);
