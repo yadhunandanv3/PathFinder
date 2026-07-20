@@ -48,7 +48,7 @@ app.get('/api/health', (req, res) => {
   }, 'Server is healthy'));
 });
 
-// Mount API Routes
+// Primary Production API Routes v1.0.1
 app.use('/api/auth', authRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/upload', uploadRoutes);
