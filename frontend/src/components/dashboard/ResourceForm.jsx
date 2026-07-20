@@ -161,8 +161,17 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pf-lime-text/40 focus:border-pf-lime-text font-medium text-pf-dark text-sm shadow-sm transition-all"
               >
                 <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat._id} value={cat.name}>{cat.name}</option>
+                {(categories && categories.length > 0
+                  ? categories
+                  : [
+                      { _id: 'cat-1', name: 'Handbooks' },
+                      { _id: 'cat-2', name: 'Testimonials' },
+                      { _id: 'cat-3', name: 'Inspirations' },
+                      { _id: 'cat-4', name: 'Strategy' },
+                      { _id: 'cat-5', name: 'General' },
+                    ]
+                ).map((cat) => (
+                  <option key={cat._id || cat.name} value={cat.name}>{cat.name}</option>
                 ))}
               </select>
               {errors.category && (

@@ -125,15 +125,15 @@ export const createResource = async (req, res, next) => {
       );
     }
 
-    // Verify tag matches active category definitions
-    const categoryExists = await Category.findOne({ name: category });
+    // Auto-create category if missing in database
+    let categoryExists = await Category.findOne({ name: category });
     if (!categoryExists) {
-      return next(
-        new ApiError(
-          400,
-          `Category '${category}' does not exist. Please create it first.`
-        )
-      );
+      categoryExists = await Category.create({
+        name: category,
+        description: `${category} resource category`,
+        isSystemPillar: true,
+        createdBy: req.user.id,
+      });
     }
 
     // Bind authenticated owner identity
