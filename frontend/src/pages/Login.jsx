@@ -1,51 +1,102 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../context/AuthContext';
-import { Lock, Mail, AlertCircle, RefreshCw } from 'lucide-react';
+import { Lock, Mail, User as UserIcon, Shield, Key, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, register: registerAuth } = useAuth();
+  const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [apiError, setApiError] = useState(null);
+  const [apiSuccess, setApiSuccess] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
+  const selectedRole = watch('role');
 
-  const handleLoginSubmit = async (data) => {
+  const handleFormSubmit = async (data) => {
     setSubmitting(true);
     setApiError(null);
+    setApiSuccess(null);
+
     try {
-      await login(data.email, data.password);
+      if (mode === 'login') {
+        await login(data.email, data.password);
+      } else {
+        await registerAuth({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          role: data.role || 'Visitor',
+          adminSecretKey: data.adminSecretKey || undefined,
+        });
+        setApiSuccess('Account created and session initialized!');
+      }
     } catch (err) {
-      const msg = err?.message || err?.response?.data?.message || 'Invalid email or password';
+      const msg = err?.message || err?.response?.data?.message || 'Authentication failed';
       setApiError(msg);
     } finally {
       setSubmitting(false);
     }
   };
 
+  const toggleMode = (newMode) => {
+    setMode(newMode);
+    setApiError(null);
+    setApiSuccess(null);
+    reset();
+  };
+
   return (
-    <div className="relative w-full max-w-md mx-auto px-6 py-12 z-10 select-none">
+    <div className="relative w-full max-w-md mx-auto px-6 py-10 z-10 select-none">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.3 }}
         className="rounded-3xl glass-panel p-8 border border-pf-lime-text/25 shadow-pf-card"
       >
-        {/* Card Header */}
-        <div className="text-center mb-8">
+        {/* Header Mode Selector Tabs */}
+        <div className="flex items-center justify-center p-1 bg-slate-100/80 rounded-2xl mb-6">
+          <button
+            type="button"
+            onClick={() => toggleMode('login')}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-200 ${
+              mode === 'login'
+                ? 'bg-pf-dark text-white shadow-sm'
+                : 'text-slate-500 hover:text-pf-dark'
+            }`}
+          >
+            Login to Account
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleMode('register')}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-200 ${
+              mode === 'register'
+                ? 'bg-pf-dark text-white shadow-sm'
+                : 'text-slate-500 hover:text-pf-dark'
+            }`}
+          >
+            Register New User
+          </button>
+        </div>
+
+        {/* Card Title Header */}
+        <div className="text-center mb-6">
           <span className="text-[10px] font-bold tracking-widest text-pf-lime-text uppercase">
             Management Portal
           </span>
           <h2 className="text-3xl font-black font-display tracking-tight text-pf-dark mt-1">
-            DASHBOARD LOGIN
+            {mode === 'login' ? 'DASHBOARD LOGIN' : 'CREATE ACCOUNT'}
           </h2>
           <p className="text-slate-500 text-xs mt-1 font-medium">
-            Enter your credentials to manage Library resources.
+            {mode === 'login'
+              ? 'Enter your credentials to manage Strategy Library resources.'
+              : 'Register a new Curator account with role permissions.'}
           </p>
         </div>
 
-        {/* API Error Box */}
+        {/* API Error Alert */}
         {apiError && (
           <div className="mb-5 rounded-2xl bg-red-50 border border-red-100 p-4 flex items-start gap-2.5 text-red-700">
             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -53,10 +104,43 @@ export default function Login() {
           </div>
         )}
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit(handleLoginSubmit)} className="space-y-4">
+        {/* API Success Alert */}
+        {apiSuccess && (
+          <div className="mb-5 rounded-2xl bg-emerald-50 border border-emerald-100 p-4 flex items-start gap-2.5 text-emerald-700">
+            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5 text-emerald-600" />
+            <span className="text-xs font-semibold leading-normal">{apiSuccess}</span>
+          </div>
+        )}
+
+        {/* Auth Form */}
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           
-          {/* Email Input */}
+          {/* Register Mode: Full Name */}
+          {mode === 'register' && (
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                Full Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <UserIcon className="w-4 h-4" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="e.g. Vikram Sharma"
+                  {...register('name', { required: 'Name is required' })}
+                  className="w-full pl-10 pr-4 py-3 bg-white/70 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pf-lime-text/40 focus:border-pf-lime-text font-medium text-pf-dark text-sm shadow-sm transition-all"
+                />
+              </div>
+              {errors.name && (
+                <span className="text-[10px] font-bold text-red-600 mt-1 ml-1 block">
+                  {errors.name.message}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Email Address */}
           <div>
             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
               Email Address
@@ -67,7 +151,7 @@ export default function Login() {
               </div>
               <input
                 type="email"
-                placeholder="editor@pathfinder.build"
+                placeholder="curator@pathfinder.build"
                 {...register('email', { 
                   required: 'Email is required',
                   pattern: {
@@ -85,7 +169,7 @@ export default function Login() {
             )}
           </div>
 
-          {/* Password Input */}
+          {/* Password */}
           <div>
             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
               Password
@@ -114,6 +198,53 @@ export default function Login() {
             )}
           </div>
 
+          {/* Register Mode: Role Selection */}
+          {mode === 'register' && (
+            <>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                  Account Role Clearance
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Shield className="w-4 h-4" />
+                  </div>
+                  <select
+                    {...register('role')}
+                    className="w-full pl-10 pr-4 py-3 bg-white/70 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pf-lime-text/40 focus:border-pf-lime-text font-medium text-pf-dark text-sm shadow-sm transition-all"
+                  >
+                    <option value="Visitor">Visitor (Read-Only)</option>
+                    <option value="Social Media Manager">Social Media Manager (Content Editor)</option>
+                    <option value="Admin">System Admin (Full Access)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Master Key input if privileged role is selected */}
+              {(selectedRole === 'Admin' || selectedRole === 'Social Media Manager') && (
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                    Master Admin Secret Key
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Key className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="password"
+                      placeholder="Enter secret key (pathfinder_admin_master_creation_secret_key_99)"
+                      {...register('adminSecretKey')}
+                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pf-lime-text/40 focus:border-pf-lime-text font-medium text-pf-dark text-sm shadow-sm transition-all"
+                    />
+                  </div>
+                  <span className="text-[9px] text-slate-400 font-semibold mt-1 ml-1 block">
+                    Default Master Key: pathfinder_admin_master_creation_secret_key_99
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+
           {/* Submit Action */}
           <motion.button
             whileTap={{ scale: 0.98 }}
@@ -124,14 +255,36 @@ export default function Login() {
             {submitting ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Authenticating Session...</span>
+                <span>{mode === 'login' ? 'Authenticating Session...' : 'Creating Account...'}</span>
               </>
             ) : (
-              <span>Login to Dashboard</span>
+              <span>{mode === 'login' ? 'Login to Dashboard' : 'Register Account'}</span>
             )}
           </motion.button>
 
         </form>
+
+        {/* Toggle Footer */}
+        <div className="text-center mt-6 pt-4 border-t border-slate-100">
+          {mode === 'login' ? (
+            <button
+              type="button"
+              onClick={() => toggleMode('register')}
+              className="text-xs font-bold text-pf-dark hover:text-pf-lime-text transition-colors"
+            >
+              Don't have an account? <span className="underline">Register a new user</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => toggleMode('login')}
+              className="text-xs font-bold text-pf-dark hover:text-pf-lime-text transition-colors"
+            >
+              Already registered? <span className="underline">Login to existing account</span>
+            </button>
+          )}
+        </div>
+
       </motion.div>
     </div>
   );
