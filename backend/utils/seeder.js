@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import Category from '../models/Category.js';
 import Resource, { ConceptNote, PublicHandbook, Inspiration, Testimonial } from '../models/Resource.js';
