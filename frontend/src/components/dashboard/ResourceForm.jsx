@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { uploadAPI } from '../../services/api';
 import { X, Upload, Plus, Trash, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function ResourceForm({ resource, categories, onClose, onSave }) {
   const isEdit = !!resource;
-  const [uploading, setUploading] = useState(false);
+  const [uploadingField, setUploadingField] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -32,6 +32,9 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
   });
 
   const selectedType = watch('type');
+  const pdfUrl = watch('pdf');
+  const thumbnailUrl = watch('thumbnail');
+  const clientAvatarUrl = watch('clientAvatar');
 
   // Chapters field array manager for Handbooks
   const { fields: chapterFields, append: appendChapter, remove: removeChapter } = useFieldArray({
@@ -44,7 +47,7 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
     const file = e.target.files[0];
     if (!file) return;
 
-    setUploading(true);
+    setUploadingField(fieldName);
     setUploadError(null);
     
     const formData = new FormData();
@@ -52,13 +55,20 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
 
     try {
       const response = await uploadAPI.uploadFile(formData);
-      if (response.success) {
-        setValue(fieldName, response.data.url);
+      // Support both unwrapped axios response and nested data structure
+      const uploadedUrl = response?.data?.url || response?.url || (typeof response === 'string' ? response : null);
+      
+      if (uploadedUrl) {
+        setValue(fieldName, uploadedUrl, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+      } else {
+        setUploadError('File upload completed but no URL was returned.');
       }
     } catch (err) {
-      setUploadError(err.message || 'File upload failed');
+      console.error('Upload Error:', err);
+      const msg = err.response?.data?.message || err.message || 'File upload failed';
+      setUploadError(msg);
     } finally {
-      setUploading(false);
+      setUploadingField(null);
     }
   };
 
@@ -357,12 +367,22 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
                   Document PDF Attachment
                 </label>
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200/80 rounded-2xl text-xs font-bold text-slate-600 cursor-pointer transition-colors">
-                    <Upload className="w-4 h-4" />
-                    <span>Upload File</span>
+                  <label className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200/80 rounded-2xl text-xs font-bold text-slate-600 cursor-pointer transition-colors shrink-0">
+                    {uploadingField === 'pdf' ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-pf-lime-text" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        <span>Upload File</span>
+                      </>
+                    )}
                     <input
                       type="file"
                       accept=".pdf"
+                      disabled={uploadingField !== null}
                       onChange={(e) => handleFileUpload(e, 'pdf')}
                       className="hidden"
                     />
@@ -371,8 +391,8 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
                     type="text"
                     placeholder="No PDF selected"
                     readOnly
-                    {...register('pdf')}
-                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-semibold focus:outline-none truncate"
+                    value={pdfUrl || ''}
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-semibold text-slate-700 focus:outline-none truncate"
                   />
                 </div>
               </div>
@@ -385,12 +405,22 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
                   Inspiration Profile Image
                 </label>
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200/80 rounded-2xl text-xs font-bold text-slate-600 cursor-pointer transition-colors">
-                    <Upload className="w-4 h-4" />
-                    <span>Upload Image</span>
+                  <label className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200/80 rounded-2xl text-xs font-bold text-slate-600 cursor-pointer transition-colors shrink-0">
+                    {uploadingField === 'thumbnail' ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-pf-lime-text" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Image</span>
+                      </>
+                    )}
                     <input
                       type="file"
                       accept="image/*"
+                      disabled={uploadingField !== null}
                       onChange={(e) => handleFileUpload(e, 'thumbnail')}
                       className="hidden"
                     />
@@ -399,8 +429,8 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
                     type="text"
                     placeholder="No image"
                     readOnly
-                    {...register('thumbnail')}
-                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-semibold focus:outline-none truncate"
+                    value={thumbnailUrl || ''}
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-semibold text-slate-700 focus:outline-none truncate"
                   />
                 </div>
               </div>
@@ -412,12 +442,22 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
                   Client Avatar Image
                 </label>
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200/80 rounded-2xl text-xs font-bold text-slate-600 cursor-pointer transition-colors">
-                    <Upload className="w-4 h-4" />
-                    <span>Upload Image</span>
+                  <label className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200/80 rounded-2xl text-xs font-bold text-slate-600 cursor-pointer transition-colors shrink-0">
+                    {uploadingField === 'clientAvatar' ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-pf-lime-text" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Image</span>
+                      </>
+                    )}
                     <input
                       type="file"
                       accept="image/*"
+                      disabled={uploadingField !== null}
                       onChange={(e) => handleFileUpload(e, 'clientAvatar')}
                       className="hidden"
                     />
@@ -426,8 +466,8 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
                     type="text"
                     placeholder="No avatar"
                     readOnly
-                    {...register('clientAvatar')}
-                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-semibold focus:outline-none truncate"
+                    value={clientAvatarUrl || ''}
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-semibold text-slate-700 focus:outline-none truncate"
                   />
                 </div>
               </div>
@@ -444,7 +484,7 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
               Cancel
             </button>
             <button
-              disabled={uploading || submitting}
+              disabled={uploadingField !== null || submitting}
               type="submit"
               className="flex items-center gap-2 px-6 py-3 bg-pf-dark hover:bg-slate-800 text-white rounded-2xl text-xs font-bold transition-all duration-200 shadow-md disabled:bg-slate-400 disabled:cursor-not-allowed"
             >
