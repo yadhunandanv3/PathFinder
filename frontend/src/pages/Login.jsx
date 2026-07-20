@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../context/AuthContext';
-import { Lock, Mail, User as UserIcon, Shield, Key, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { authAPI } from '../services/api';
+import { Lock, Mail, User as UserIcon, Shield, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Login() {
-  const { login, register: registerAuth } = useAuth();
+  const { login } = useAuth();
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [apiError, setApiError] = useState(null);
   const [apiSuccess, setApiSuccess] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm();
-  const selectedRole = watch('role');
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm();
 
   const handleFormSubmit = async (data) => {
     setSubmitting(true);
@@ -23,15 +23,13 @@ export default function Login() {
       if (mode === 'login') {
         await login(data.email, data.password);
       } else {
-        const { authAPI } = await import('../services/api');
         const response = await authAPI.register({
           name: data.name,
           email: data.email,
           password: data.password,
-          role: data.role || 'Visitor',
-          adminSecretKey: data.adminSecretKey || undefined,
+          role: data.role || 'Social Media Manager',
         });
-        
+
         if (response.success) {
           setApiSuccess('User created successfully! Please log in with your credentials.');
           setMode('login');
@@ -99,7 +97,7 @@ export default function Login() {
           <p className="text-slate-500 text-xs mt-1 font-medium">
             {mode === 'login'
               ? 'Enter your credentials to manage Strategy Library resources.'
-              : 'Register a new Curator account with role permissions.'}
+              : 'Create a Social Media Manager or Visitor account.'}
           </p>
         </div>
 
@@ -150,22 +148,16 @@ export default function Login() {
           {/* Email Address */}
           <div>
             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
-              Email Address
+              Email Address / Username
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                 <Mail className="w-4 h-4" />
               </div>
               <input
-                type="email"
-                placeholder="curator@pathfinder.build"
-                {...register('email', { 
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address'
-                  }
-                })}
+                type="text"
+                placeholder="admin@pathfinder.build"
+                {...register('email', { required: 'Email/Username is required' })}
                 className="w-full pl-10 pr-4 py-3 bg-white/70 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pf-lime-text/40 focus:border-pf-lime-text font-medium text-pf-dark text-sm shadow-sm transition-all"
               />
             </div>
@@ -207,49 +199,23 @@ export default function Login() {
 
           {/* Register Mode: Role Selection */}
           {mode === 'register' && (
-            <>
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
-                  Account Role Clearance
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Shield className="w-4 h-4" />
-                  </div>
-                  <select
-                    {...register('role')}
-                    className="w-full pl-10 pr-4 py-3 bg-white/70 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pf-lime-text/40 focus:border-pf-lime-text font-medium text-pf-dark text-sm shadow-sm transition-all"
-                  >
-                    <option value="Visitor">Visitor (Read-Only)</option>
-                    <option value="Social Media Manager">Social Media Manager (Content Editor)</option>
-                    <option value="Admin">System Admin (Full Access)</option>
-                  </select>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+                Account Role Clearance
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Shield className="w-4 h-4" />
                 </div>
+                <select
+                  {...register('role')}
+                  className="w-full pl-10 pr-4 py-3 bg-white/70 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pf-lime-text/40 focus:border-pf-lime-text font-medium text-pf-dark text-sm shadow-sm transition-all"
+                >
+                  <option value="Social Media Manager">Social Media Manager (Content Editor)</option>
+                  <option value="Visitor">Visitor (Read-Only)</option>
+                </select>
               </div>
-
-              {/* Master Key input if privileged role is selected */}
-              {(selectedRole === 'Admin' || selectedRole === 'Social Media Manager') && (
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
-                    Master Admin Secret Key
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Key className="w-4 h-4" />
-                    </div>
-                    <input
-                      type="password"
-                      placeholder="Enter secret key (pathfinder_admin_master_creation_secret_key_99)"
-                      {...register('adminSecretKey')}
-                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-pf-lime-text/40 focus:border-pf-lime-text font-medium text-pf-dark text-sm shadow-sm transition-all"
-                    />
-                  </div>
-                  <span className="text-[9px] text-slate-400 font-semibold mt-1 ml-1 block">
-                    Default Master Key: pathfinder_admin_master_creation_secret_key_99
-                  </span>
-                </div>
-              )}
-            </>
+            </div>
           )}
 
           {/* Submit Action */}
@@ -262,14 +228,26 @@ export default function Login() {
             {submitting ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>{mode === 'login' ? 'Authenticating Session...' : 'Creating Account...'}</span>
+                <span>{mode === 'login' ? 'Authenticating Session...' : 'Creating User Account...'}</span>
               </>
             ) : (
-              <span>{mode === 'login' ? 'Login to Dashboard' : 'Register Account'}</span>
+              <span>{mode === 'login' ? 'Login to Dashboard' : 'Create User Account'}</span>
             )}
           </motion.button>
 
         </form>
+
+        {/* Default Admin Credentials Hint */}
+        {mode === 'login' && (
+          <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-2xl text-center">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">
+              Default System Admin Credentials
+            </span>
+            <span className="text-xs font-semibold text-pf-dark block">
+              Username: <code className="bg-slate-200 px-1.5 py-0.5 rounded font-mono text-[11px]">admin@pathfinder.build</code> | Password: <code className="bg-slate-200 px-1.5 py-0.5 rounded font-mono text-[11px]">admin@123</code>
+            </span>
+          </div>
+        )}
 
         {/* Toggle Footer */}
         <div className="text-center mt-6 pt-4 border-t border-slate-100">
