@@ -19,7 +19,7 @@ export const uploadFile = async (req, res, next) => {
       return res.status(200).json(
         new ApiResponse(
           200,
-          { fileUrl, filename: req.file.originalname, mimetype: req.file.mimetype },
+          { fileUrl, url: fileUrl, filename: req.file.originalname, mimetype: req.file.mimetype },
           'File uploaded as Base64 successfully'
         )
       );
@@ -38,12 +38,14 @@ export const uploadFile = async (req, res, next) => {
       // Write file from memory stream buffer
       await fs.promises.writeFile(filePath, req.file.buffer);
 
-      const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+      // Force HTTPS protocol for cloud hosting reverse proxies (Render, Vercel)
+      const protocol = req.headers['x-forwarded-proto'] || 'https';
+      const fileUrl = `${protocol}://${req.get('host')}/uploads/${filename}`;
 
       return res.status(200).json(
         new ApiResponse(
           200,
-          { fileUrl, filename, mimetype: req.file.mimetype },
+          { fileUrl, url: fileUrl, filename, mimetype: req.file.mimetype },
           'File uploaded to local disk successfully'
         )
       );

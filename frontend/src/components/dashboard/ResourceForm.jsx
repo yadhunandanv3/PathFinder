@@ -55,8 +55,8 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
 
     try {
       const response = await uploadAPI.uploadFile(formData);
-      // Support both unwrapped axios response and nested data structure
-      const uploadedUrl = response?.data?.url || response?.url || (typeof response === 'string' ? response : null);
+      // Support fileUrl, url, and nested response data structures
+      const uploadedUrl = response?.data?.fileUrl || response?.data?.url || response?.fileUrl || response?.url || (typeof response === 'string' ? response : null);
       
       if (uploadedUrl) {
         setValue(fieldName, uploadedUrl, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
