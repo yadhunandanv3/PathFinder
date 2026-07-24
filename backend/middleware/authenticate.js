@@ -26,13 +26,12 @@ export const authenticate = async (req, res, next) => {
       return next(new ApiError(401, 'Unauthorized: User associated with token no longer exists'));
     }
 
-    // Attach user payload to req.user
     req.user = {
       _id: user._id,
       id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      role: user.role ? user.role.toUpperCase() : 'SOCIAL_MEDIA_MANAGER',
     };
 
     next();
