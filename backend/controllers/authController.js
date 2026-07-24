@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Category from '../models/Category.js';
 import ApiError from '../utils/apiError.js';
 import ApiResponse from '../utils/apiResponse.js';
 import jwt from 'jsonwebtoken';
@@ -31,6 +32,24 @@ export const login = async (req, res, next) => {
             password: 'admin@123',
             role: 'ADMIN',
           });
+        }
+
+        // Auto-seed default system categories
+        const systemDefaults = [
+          'Concept notes',
+          'Public handbooks',
+          'Our inspirations (people)',
+          'Testimonials'
+        ];
+        for (const catName of systemDefaults) {
+          const catExists = await Category.findOne({ name: catName });
+          if (!catExists) {
+            await Category.create({
+              name: catName,
+              isSystemPillar: true,
+              createdBy: adminUser._id
+            });
+          }
         }
 
         const token = generateToken(adminUser._id, 'ADMIN');

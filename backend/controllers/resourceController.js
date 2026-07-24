@@ -268,6 +268,21 @@ export const deleteCategory = async (req, res, next) => {
       return next(new ApiError(404, 'Category not found'));
     }
 
+    const systemCategoryNames = [
+      'Concept notes',
+      'Public handbooks',
+      'Our inspirations (people)',
+      'Testimonials',
+      'Concept Notes',
+      'Public Handbooks',
+      'Our Inspirations',
+      'Handbooks'
+    ];
+
+    if (category.isSystemPillar || systemCategoryNames.includes(category.name)) {
+      return next(new ApiError(400, `Category '${category.name}' is a system default and cannot be deleted.`));
+    }
+
     await category.deleteOne();
     res
       .status(200)

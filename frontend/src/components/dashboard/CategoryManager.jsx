@@ -118,28 +118,52 @@ export default function CategoryManager({ categories, onRefresh }) {
                 </td>
               </tr>
             ) : (
-              categories.map((cat) => (
-                <tr key={cat._id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-5 py-3.5 text-xs font-bold text-pf-dark">
-                    {cat.name}
-                  </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <button
-                      type="button"
-                      disabled={isSMM || loading}
-                      onClick={() => handleDelete(cat._id)}
-                      className={`p-2 rounded-xl transition-colors ${
-                        isSMM
-                          ? 'text-slate-300 cursor-not-allowed'
-                          : 'text-red-500 hover:bg-red-50 hover:text-red-600'
-                      }`}
-                      title={isSMM ? 'Only Admins can delete categories' : 'Delete category'}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))
+              categories.map((cat) => {
+                const isDefault = cat.isSystemPillar || [
+                  'Concept notes',
+                  'Public handbooks',
+                  'Our inspirations (people)',
+                  'Testimonials',
+                  'Concept Notes',
+                  'Public Handbooks',
+                  'Our Inspirations',
+                  'Handbooks'
+                ].includes(cat.name);
+
+                return (
+                  <tr key={cat._id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-5 py-3.5 text-xs font-bold text-pf-dark flex items-center gap-2">
+                      <span>{cat.name}</span>
+                      {isDefault && (
+                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded text-[9px] font-bold uppercase tracking-wider">
+                          System Default
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <button
+                        type="button"
+                        disabled={isSMM || isDefault || loading}
+                        onClick={() => handleDelete(cat._id)}
+                        className={`p-2 rounded-xl transition-colors ${
+                          isSMM || isDefault
+                            ? 'text-slate-200 cursor-not-allowed'
+                            : 'text-red-500 hover:bg-red-50 hover:text-red-600'
+                        }`}
+                        title={
+                          isSMM 
+                            ? 'Only Admins can delete categories' 
+                            : isDefault 
+                              ? 'System default categories cannot be deleted' 
+                              : 'Delete category'
+                        }
+                      >
+                        <Trash className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

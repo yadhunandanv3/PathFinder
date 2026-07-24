@@ -7,7 +7,11 @@ const categorySchema = new mongoose.Schema(
       required: [true, 'Category name is required'],
       unique: true,
       trim: true,
-      maxlength: [30, 'Category name cannot exceed 30 characters'],
+      maxlength: [50, 'Category name cannot exceed 50 characters'],
+    },
+    isSystemPillar: {
+      type: Boolean,
+      default: false,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
