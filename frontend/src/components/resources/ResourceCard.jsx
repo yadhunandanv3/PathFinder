@@ -3,7 +3,20 @@ import { motion } from 'framer-motion';
 import { FileText, BookOpen, User, Quote, Download, Clock, ExternalLink } from 'lucide-react';
 
 export default function ResourceCard({ resource, onClick }) {
-  const { type, title, description, category, thumbnail, pdf, author, createdAt } = resource;
+  const { type: propType, contentType, title, description, category, thumbnail, pdf, author, createdAt } = resource;
+
+  const typeMap = {
+    'CONCEPT_NOTE': 'ConceptNote',
+    'PUBLIC_HANDBOOK': 'PublicHandbook',
+    'INSPIRATION': 'Inspiration',
+    'TESTIMONIAL': 'Testimonial',
+    'ConceptNote': 'ConceptNote',
+    'PublicHandbook': 'PublicHandbook',
+    'Inspiration': 'Inspiration',
+    'Testimonial': 'Testimonial'
+  };
+
+  const type = propType || typeMap[contentType] || contentType;
 
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
