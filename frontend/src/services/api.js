@@ -55,18 +55,9 @@ export const userAPI = {
 
 export const resourceAPI = {
   ...contentAPI,
-  getCategories: () => Promise.resolve({
-    success: true,
-    data: [
-      { _id: 'cat-1', name: 'Handbooks' },
-      { _id: 'cat-2', name: 'Testimonials' },
-      { _id: 'cat-3', name: 'Inspirations' },
-      { _id: 'cat-4', name: 'Strategy' },
-      { _id: 'cat-5', name: 'General' },
-    ]
-  }),
-  createCategory: (catData) => Promise.resolve({ success: true, data: { _id: Date.now(), name: catData.name } }),
-  deleteCategory: (id) => Promise.resolve({ success: true }),
+  getCategories: () => api.get('/resources/categories').catch(() => api.get('/api/resources/categories')),
+  createCategory: (catData) => api.post('/resources/categories', catData).catch(() => api.post('/api/resources/categories', catData)),
+  deleteCategory: (id) => api.delete(`/resources/categories/${id}`).catch(() => api.delete(`/api/resources/categories/${id}`)),
 };
 
 export const uploadAPI = {
