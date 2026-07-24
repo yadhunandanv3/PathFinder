@@ -47,7 +47,20 @@ export const getAllContent = async (req, res, next) => {
 
     const typeFilter = contentType || type;
     if (typeFilter) {
-      query.contentType = typeFilter;
+      // Map both camelCase and uppercase enums to database values
+      const typeMapping = {
+        'ConceptNote': 'CONCEPT_NOTE',
+        'PublicHandbook': 'PUBLIC_HANDBOOK',
+        'Inspiration': 'INSPIRATION',
+        'Testimonial': 'TESTIMONIAL',
+        'concept_note': 'CONCEPT_NOTE',
+        'public_handbook': 'PUBLIC_HANDBOOK',
+        'inspiration': 'INSPIRATION',
+        'testimonial': 'TESTIMONIAL',
+      };
+      
+      const normalizedType = typeMapping[typeFilter] || typeFilter.toUpperCase();
+      query.contentType = normalizedType;
     }
 
     if (status) {
