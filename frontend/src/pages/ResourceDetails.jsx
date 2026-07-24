@@ -8,6 +8,19 @@ export default function ResourceDetails({ resourceId, onBack }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const typeMap = {
+    'CONCEPT_NOTE': 'ConceptNote',
+    'PUBLIC_HANDBOOK': 'PublicHandbook',
+    'INSPIRATION': 'Inspiration',
+    'TESTIMONIAL': 'Testimonial',
+    'ConceptNote': 'ConceptNote',
+    'PublicHandbook': 'PublicHandbook',
+    'Inspiration': 'Inspiration',
+    'Testimonial': 'Testimonial'
+  };
+
+  const type = resource ? (resource.type || typeMap[resource.contentType] || resource.contentType) : '';
+
   useEffect(() => {
     const fetchDetails = async () => {
       try {
@@ -29,7 +42,7 @@ export default function ResourceDetails({ resourceId, onBack }) {
     if (!resource || !resource.pdf) return;
     
     // Trigger download count increment on server (ConceptNote only)
-    if (resource.type === 'ConceptNote') {
+    if (type === 'ConceptNote') {
       try {
         const response = await resourceAPI.getById(resourceId, { download: 'true' });
         if (response.success) {
@@ -97,7 +110,7 @@ export default function ResourceDetails({ resourceId, onBack }) {
       <div className="rounded-3xl glass-panel-lime p-8 border border-pf-lime-text/25 shadow-pf-card">
         
         {/* Polymorphic Layout 1: CONCEPT NOTE */}
-        {resource.type === 'ConceptNote' && (
+        {type === 'ConceptNote' && (
           <div className="flex flex-col gap-6">
             <div className="flex justify-between items-start gap-4">
               <span className="text-[10px] font-bold px-3 py-1 bg-pf-lime text-pf-lime-text border border-pf-lime-text/10 rounded-full uppercase tracking-wider">
@@ -143,7 +156,7 @@ export default function ResourceDetails({ resourceId, onBack }) {
         )}
 
         {/* Polymorphic Layout 2: PUBLIC HANDBOOK */}
-        {resource.type === 'PublicHandbook' && (
+        {type === 'PublicHandbook' && (
           <div className="flex flex-col gap-6">
             <div className="flex justify-between items-center">
               <span className="text-[10px] font-bold px-3 py-1 bg-blue-100 text-blue-700 rounded-full uppercase tracking-wider">
@@ -198,7 +211,7 @@ export default function ResourceDetails({ resourceId, onBack }) {
         )}
 
         {/* Polymorphic Layout 3: INSPIRATION */}
-        {resource.type === 'Inspiration' && (
+        {type === 'Inspiration' && (
           <div className="flex flex-col gap-6 relative overflow-hidden">
             <Quote className="absolute right-4 top-2 w-36 h-36 text-slate-100/50 pointer-events-none z-0" />
             
@@ -246,7 +259,7 @@ export default function ResourceDetails({ resourceId, onBack }) {
         )}
 
         {/* Polymorphic Layout 4: TESTIMONIAL */}
-        {resource.type === 'Testimonial' && (
+        {type === 'Testimonial' && (
           <div className="flex flex-col gap-6 text-center max-w-2xl mx-auto pt-4">
             <span className="self-center text-[10px] font-bold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full uppercase tracking-wider mb-2">
               {resource.category}
