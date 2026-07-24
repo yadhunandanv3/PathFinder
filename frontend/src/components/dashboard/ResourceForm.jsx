@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { uploadAPI } from '../../services/api';
 import { X, Upload, Plus, Trash, AlertCircle, RefreshCw } from 'lucide-react';
@@ -130,8 +131,8 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
@@ -528,6 +529,7 @@ export default function ResourceForm({ resource, categories, onClose, onSave }) 
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
