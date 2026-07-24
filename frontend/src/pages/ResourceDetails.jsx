@@ -20,6 +20,9 @@ export default function ResourceDetails({ resourceId, onBack }) {
   };
 
   const type = resource ? (resource.type || typeMap[resource.contentType] || resource.contentType) : '';
+  const pdf = resource ? (resource.pdf || resource.image || '') : '';
+  const thumbnail = resource ? (resource.thumbnail || resource.image || '') : '';
+  const clientAvatar = resource ? (resource.clientAvatar || resource.image || '') : '';
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -54,7 +57,7 @@ export default function ResourceDetails({ resourceId, onBack }) {
     }
     
     // Open file in new tab
-    window.open(resource.pdf, '_blank');
+    window.open(pdf, '_blank');
   };
 
   const formatDate = (dateStr) => {
@@ -138,7 +141,7 @@ export default function ResourceDetails({ resourceId, onBack }) {
               <p>{resource.description}</p>
             </div>
 
-            {resource.pdf && (
+            {pdf && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 pt-6 mt-4">
                 <span className="text-xs text-slate-400 font-bold">
                   PDF downloaded {resource.downloadCount || 0} times.
@@ -196,7 +199,7 @@ export default function ResourceDetails({ resourceId, onBack }) {
                   <p>{resource.description}</p>
                 </div>
 
-                {resource.pdf && (
+                {pdf && (
                   <button
                     onClick={handleDownload}
                     className="flex items-center justify-center gap-2 self-start px-6 py-3 bg-pf-dark hover:bg-slate-800 text-white rounded-2xl text-xs font-bold transition-all duration-200 shadow-md w-full sm:w-auto"
@@ -227,8 +230,8 @@ export default function ResourceDetails({ resourceId, onBack }) {
 
               <div className="flex items-center gap-4 border-y border-slate-100 py-4 my-2">
                 <div className="w-14 h-14 rounded-full bg-slate-200 overflow-hidden shrink-0 border border-slate-100">
-                  {resource.thumbnail && (
-                    <img src={resource.thumbnail} alt={resource.personName} loading="lazy" className="w-full h-full object-cover" />
+                  {thumbnail && (
+                    <img src={thumbnail} alt={resource.personName} loading="lazy" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div>
@@ -273,8 +276,8 @@ export default function ResourceDetails({ resourceId, onBack }) {
             {/* Profile Avatar Card */}
             <div className="flex flex-col items-center gap-2 border-t border-slate-200/50 pt-6 mt-4">
               <div className="w-16 h-16 rounded-full bg-slate-200 overflow-hidden shrink-0 border border-slate-100 mb-2">
-                {resource.clientAvatar && (
-                  <img src={resource.clientAvatar} alt={resource.clientName} loading="lazy" className="w-full h-full object-cover" />
+                {clientAvatar && (
+                  <img src={clientAvatar} alt={resource.clientName} loading="lazy" className="w-full h-full object-cover" />
                 )}
               </div>
               <h4 className="text-base font-bold text-pf-dark leading-tight">{resource.clientName}</h4>

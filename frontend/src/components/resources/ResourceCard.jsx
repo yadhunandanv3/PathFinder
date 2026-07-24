@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { FileText, BookOpen, User, Quote, Download, Clock, ExternalLink } from 'lucide-react';
 
 export default function ResourceCard({ resource, onClick }) {
-  const { type: propType, contentType, title, description, category, thumbnail, pdf, author, createdAt } = resource;
+  const { type: propType, contentType, title, description, category, thumbnail: propThumbnail, pdf: propPdf, author, createdAt } = resource;
 
   const typeMap = {
     'CONCEPT_NOTE': 'ConceptNote',
@@ -17,6 +17,9 @@ export default function ResourceCard({ resource, onClick }) {
   };
 
   const type = propType || typeMap[contentType] || contentType;
+  const pdf = propPdf || resource.image || '';
+  const thumbnail = propThumbnail || resource.image || '';
+  const clientAvatar = resource.clientAvatar || resource.image || '';
 
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -231,8 +234,8 @@ export default function ResourceCard({ resource, onClick }) {
         {/* Client Footer */}
         <div className="flex items-center gap-3 border-t border-slate-200/50 pt-4 mt-auto">
           <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-            {resource.clientAvatar ? (
-              <img src={resource.clientAvatar} alt={resource.clientName} loading="lazy" className="w-full h-full object-cover" />
+            {clientAvatar ? (
+              <img src={clientAvatar} alt={resource.clientName} loading="lazy" className="w-full h-full object-cover" />
             ) : (
               <span className="text-sm font-bold text-slate-500">
                 {resource.clientName ? resource.clientName.charAt(0) : 'T'}
