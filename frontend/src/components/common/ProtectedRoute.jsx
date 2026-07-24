@@ -20,8 +20,11 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
     return <Login />;
   }
 
-  // Verify Role authorizations
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+  // Verify Role authorizations (case-insensitive check)
+  const normalizedUserRole = user.role ? user.role.toUpperCase() : '';
+  const normalizedAllowedRoles = allowedRoles.map(r => r.toUpperCase());
+
+  if (allowedRoles.length > 0 && !normalizedAllowedRoles.includes(normalizedUserRole)) {
     return (
       <div className="w-full max-w-md mx-auto my-12 p-8 rounded-3xl bg-white border border-slate-200 shadow-pf-card text-center flex flex-col items-center gap-4">
         <div className="p-3 bg-red-100 text-red-600 rounded-2xl">
