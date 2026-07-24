@@ -118,9 +118,22 @@ export const getAllContent = async (req, res, next) => {
 // @access  Public / Staff (ADMIN, SOCIAL_MEDIA_MANAGER)
 export const getContentById = async (req, res, next) => {
   try {
-    const content = await Content.findById(req.params.id)
+    const { download } = req.query;
+
+    let content;
+    if (download === 'true') {
+      content = await Content.findByIdAndUpdate(
+        req.params.id,
+        { $inc: { downloadCount: 1 } },
+        { new: true }
+      )
       .populate('createdBy', 'name email role')
       .populate('updatedBy', 'name email role');
+    } else {
+      content = await Content.findById(req.params.id)
+        .populate('createdBy', 'name email role')
+        .populate('updatedBy', 'name email role');
+    }
 
     if (!content) {
       return next(new ApiError(404, `Content not found with id of ${req.params.id}`));

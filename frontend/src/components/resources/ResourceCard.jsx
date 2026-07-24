@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, BookOpen, User, Quote, Download, Clock, ExternalLink } from 'lucide-react';
+import { resourceAPI } from '../../services/api';
 
 export default function ResourceCard({ resource, onClick }) {
+  const [downloadCount, setDownloadCount] = useState(resource.downloadCount || 0);
   const { type: propType, contentType, title, description, category, thumbnail: propThumbnail, pdf: propPdf, author, createdAt } = resource;
 
   const typeMap = {
@@ -21,9 +23,17 @@ export default function ResourceCard({ resource, onClick }) {
   const thumbnail = propThumbnail || resource.image || '';
   const clientAvatar = resource.clientAvatar || resource.image || '';
 
-  const handlePdfDownload = (e, fileData, filename) => {
+  const handlePdfDownload = async (e, fileData, filename) => {
     if (e) e.stopPropagation();
     if (!fileData) return;
+
+    // Trigger download count increment on server in background
+    try {
+      await resourceAPI.getById(resource._id, { download: 'true' });
+      setDownloadCount(prev => prev + 1);
+    } catch (err) {
+      console.error('Failed to log card download:', err);
+    }
 
     try {
       if (fileData.startsWith('data:')) {
@@ -87,7 +97,7 @@ export default function ResourceCard({ resource, onClick }) {
               className="flex items-center gap-1 text-xs font-bold text-pf-lime-text hover:text-pf-dark transition-colors duration-200"
             >
               <Download className="w-4 h-4" />
-              <span>PDF ({resource.downloadCount || 0})</span>
+              <span>PDF ({downloadCount})</span>
             </motion.button>
           )}
         </div>
