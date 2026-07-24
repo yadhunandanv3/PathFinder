@@ -15,8 +15,8 @@ Pathfinder is a premium Strategy Studio web platform engineered for early-stage 
 
 ### 1. Pixel-Perfect Figma Hero Interface
 * **Display Headline**: Engineered with exact Figma parameters (`League Gothic` for bold headers, `Playfair Display` serif italic for `choose`, glowing brand Jolly Lime `#B8FF22`).
-* **Hexagonal Silhouette Capsule**: Vertical rounded-vertex hexagon (`199.33px` $\times$ `505.97px`, border `0.69px` solid `#1E1E1E` 30%) with realistic standing figure vector and soft cast shadow.
-* **Inline Header Pill**: Encloses 5 standing human figure silhouettes (`poses.png` / `214.79px` $\times$ `92.38px`).
+* **Hexagonal Silhouette Capsule**: Vertical rounded-vertex hexagon (`199.33px` × `505.97px`, border `0.69px` solid `#1E1E1E` 30%) with realistic standing figure vector and soft cast shadow.
+* **Inline Header Pill**: Encloses 5 standing human figure silhouettes (`poses.png` / `214.79px` × `92.38px`).
 * **Vector Connector Lines**: SVG paths (`Vector 32`) connecting the header cards down to the tagline box with directional arrows.
 
 ### 2. Floating Navigation Cluster (`main-btns`)
@@ -24,15 +24,15 @@ Pathfinder is a premium Strategy Studio web platform engineered for early-stage 
 * **Active Translucent Glass**: Translucent dark glassmorphism (`#2D2D2DBF` with `backdrop-blur-md`) with cyan vector accents (`#22D3EE`).
 * **Continuous Organic Floating Motion**: Hardware-accelerated Framer Motion keyframes (`y: [0, -7, 0]`) with staggered delays (`0s`, `0.4s`, `0.2s`, `0.6s`, `0.8s`).
 
-### 3. Strategy Resource Explorer (`LIBRARY`)
-* **Category Filtering**: Filter by `Handbooks`, `Testimonials`, and `Inspirations`.
-* **Real-time Search**: Debounced search input across title, description, author, and tags with pagination stability.
-* **PDF Reader & Downloads**: Direct online reading and document downloads.
+### 3. Unified Content Module (`LIBRARY`)
+* **Single Collection Inheritance**: Fused all resources under a unified MongoDB `Content` collection (`CONCEPT_NOTE`, `PUBLIC_HANDBOOK`, `INSPIRATION`, `TESTIMONIAL`) for clean queries, sorting, and pagination.
+* **Category Filtering**: Filter by category tags (`Handbooks`, `Testimonials`, `Inspirations`, `Strategy`, `General`).
+* **Real-time Search**: Debounced search input across title, description, and author fields.
 
 ### 4. Curator Portal & Admin CMS
-* **Role-Based Access Control (RBAC)**: Distinct permissions for **Admin** (full access) and **Social Media Manager (SMM)** (content creation/editing, restricted deletion).
-* **Resource Management**: Create, edit, and archive strategy assets.
-* **Category CMS**: Dynamic category creation and status toggles.
+* **Role-Based Access Control (RBAC)**: Two roles:
+  * **`ADMIN`**: Full administrator clearance. Access to resource CRUD, category management, and user management (`/api/users`).
+  * **`SOCIAL_MEDIA_MANAGER`**: Access to resource creation and editing. Access to user management and content deletion is strictly blocked.
 
 ---
 
@@ -46,8 +46,8 @@ Pathfinder is a premium Strategy Studio web platform engineered for early-stage 
 | **Icons & Vectors** | Lucide React + Hand-crafted SVG Paths |
 | **Backend API** | Node.js + Express.js |
 | **Database** | MongoDB / Mongoose ODM |
-| **Authentication** | JSON Web Tokens (JWT) + HTTP-Only / Authorization Header |
-| **API Documentation** | Swagger UI (`/api-docs`) |
+| **Authentication** | JSON Web Tokens (JWT) + Bearer Token Authorization Headers |
+| **Error Handling** | Centralized API Express Error Middleware |
 
 ---
 
@@ -59,17 +59,14 @@ Pathfinder is a premium Strategy Studio web platform engineered for early-stage 
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/PathFinder.git
+git clone https://github.com/yadhunandanv3/PathFinder.git
 cd PathFinder
 ```
 
-### Step 2: Backend Setup & Seeding
+### Step 2: Backend Setup & Launch
 ```bash
 cd backend
 npm install
-
-# Seed the database with initial categories, resources, and credentials
-npm run db:seed
 
 # Start backend dev server (runs on http://localhost:5000)
 npm run dev
@@ -87,49 +84,57 @@ npm run dev
 
 ---
 
-## 🔐 Pre-seeded Test Credentials
+## 🔐 System Admin Credentials
 
 Access the **Curator Portal** by clicking `Curator Portal` in the website footer:
 
-| Role | Email | Password | Access Level |
+| Email | Password | Role | Access Level |
 | :--- | :--- | :--- | :--- |
-| **System Admin** | `admin@pathfinder.build` | `PathfinderAdmin123!` | Full Admin Clearance (Create, Edit, Delete) |
-| **Social Media Manager** | `smm@pathfinder.build` | `PathfinderSMM456!` | Content Editor (Create & Edit; Delete restricted) |
+| `admin@pathfinder.build` | `admin@123` | **`ADMIN`** | Full Administrator Clearance (Create, Edit, Delete, Manage Users) |
+| `admin2@pathfinder.build` | `admin@123` | **`ADMIN`** | Alternate Seeder Admin Account |
+
+*You can also click **Register New User** to register custom accounts directly into the MongoDB Atlas database.*
 
 ---
 
 ## 📡 REST API Endpoints
 
-| Method | Endpoint | Description | Access |
-| :---: | :--- | :--- | :---: |
-| `GET` | `/api/health` | API Health Check | Public |
-| `POST` | `/api/auth/login` | User Authentication | Public |
-| `GET` | `/api/auth/me` | Fetch Current User Profile | Authenticated |
-| `GET` | `/api/resources` | Fetch Strategy Resources (Filtered & Paginated) | Public |
-| `POST` | `/api/resources` | Create New Resource | Admin / SMM |
-| `PUT` | `/api/resources/:id` | Update Existing Resource | Admin / SMM |
-| `DELETE` | `/api/resources/:id` | Delete Resource | Admin Only |
-| `GET` | `/api/categories` | List Active Categories | Public |
+### Authentication Endpoints
+* `POST /api/auth/login` - Authenticate and obtain JWT
+* `GET /api/auth/me` - Retrieve current user profile
 
-*Interactive Swagger Documentation available at `http://localhost:5000/api-docs`.*
+### Content Endpoints
+* `GET /api/content` - Fetch content items (filtered and paginated)
+* `GET /api/content/:id` - Fetch single content item by ID
+* `POST /api/content` - Create a content item (Staff only)
+* `PUT /api/content/:id` - Update an existing content item (Staff only)
+* `DELETE /api/content/:id` - Delete a content item (ADMIN only)
+
+### User Management Endpoints (ADMIN Only)
+* `GET /api/users` - List all user accounts
+* `POST /api/users` - Create a new user account
+* `PUT /api/users/:id` - Update user account details
+* `DELETE /api/users/:id` - Delete a user account
+
+### Upload Endpoints
+* `POST /api/upload` - Upload file attachment to server
 
 ---
 
-## 📦 Deployment Guide
+## 📦 Production Deployment Configuration
 
-### Database (MongoDB Atlas)
-1. Create a free M0 cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
-2. Allow network access (`0.0.0.0/0`) and copy your MongoDB connection string.
-
-### Backend (Render.com)
-1. Connect GitHub repository to [Render](https://render.com/).
-2. Root Directory: `backend` | Build Command: `npm install` | Start Command: `npm start`.
-3. Set Environment Variables: `MONGO_URI`, `JWT_SECRET`, `NODE_ENV=production`.
-
-### Frontend (Vercel)
-1. Import repository to [Vercel](https://vercel.com/).
-2. Root Directory: `frontend` | Framework: `Vite` | Build Command: `npm run build` | Output: `dist`.
-3. Set Environment Variable: `VITE_API_URL=https://your-backend-name.onrender.com/api`.
+### Single-Page App rewrites (`vercel.json`)
+To prevent **404: NOT_FOUND** errors when refreshing or directly navigating to frontend subpaths (like `/login` or `/dashboard`), the frontend uses `vercel.json`:
+```json
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
 
 ---
 
