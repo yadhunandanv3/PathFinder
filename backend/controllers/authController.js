@@ -17,7 +17,7 @@ const generateToken = (id, role) => {
 // @access  Public
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     if (!name || !email || !password) {
       return next(new ApiError(400, 'Name, email, and password are required'));
@@ -29,12 +29,20 @@ export const register = async (req, res, next) => {
       return next(new ApiError(400, 'User with this email already exists'));
     }
 
-    // Secure default assignment: Public signups are forced to SOCIAL_MEDIA_MANAGER
+    // Map common role variations to standard uppercase database enums
+    const roleMapping = {
+      'social_media_manager': 'SOCIAL_MEDIA_MANAGER',
+      'social media manager': 'SOCIAL_MEDIA_MANAGER',
+      'visitor': 'VISITOR',
+    };
+    const cleanRole = role ? role.trim().toLowerCase() : '';
+    const finalRole = roleMapping[cleanRole] || 'VISITOR';
+
     const user = await User.create({
       name,
       email: cleanEmail,
       password,
-      role: 'SOCIAL_MEDIA_MANAGER',
+      role: finalRole,
     });
 
     const token = generateToken(user._id, user.role);
@@ -68,7 +76,7 @@ export const login = async (req, res, next) => {
     const cleanEmail = email ? email.trim().toLowerCase() : '';
 
     if (!email || !password) {
-      return next(new ApiError(400, 'Email and password are required'));
+      return next(new ApiError(400, 'Invalid email or password'));
     }
 
     // Direct bulletproof system admin login & auto-seeder

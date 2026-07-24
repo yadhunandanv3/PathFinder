@@ -28,8 +28,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['ADMIN', 'SOCIAL_MEDIA_MANAGER'],
-      default: 'SOCIAL_MEDIA_MANAGER',
+      enum: ['ADMIN', 'SOCIAL_MEDIA_MANAGER', 'VISITOR'],
+      default: 'VISITOR',
     },
   },
   {

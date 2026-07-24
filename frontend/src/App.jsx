@@ -40,7 +40,7 @@ function MainLayout() {
             {activeTab === 'LIBRARY' ? (
               <Resources key="library" />
             ) : activeTab === 'DASHBOARD' ? (
-              <ProtectedRoute key="dashboard">
+              <ProtectedRoute key="dashboard" allowedRoles={['ADMIN', 'SOCIAL_MEDIA_MANAGER']}>
                 <Dashboard />
               </ProtectedRoute>
             ) : (
