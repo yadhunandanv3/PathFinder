@@ -6,12 +6,22 @@ import {
   updateContent,
   deleteContent,
 } from '../controllers/contentController.js';
+import {
+  getCategories,
+  createCategory,
+  deleteCategory,
+} from '../controllers/resourceController.js';
 import authenticate from '../middleware/authenticate.js';
 import authorize from '../middleware/authorize.js';
 
 const router = express.Router();
 
-// Public Visitor & Staff read endpoints
+// Categories endpoints
+router.get('/categories', getCategories);
+router.post('/categories', authenticate, authorize('ADMIN'), createCategory);
+router.delete('/categories/:id', authenticate, authorize('ADMIN'), deleteCategory);
+
+// Public Visitor & Staff Content read endpoints
 router.get('/', getAllContent);
 router.get('/:id', getContentById);
 
