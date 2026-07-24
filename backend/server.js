@@ -37,6 +37,14 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Static file serving for uploads
 const uploadsDir = path.join(process.cwd(), 'uploads');
 app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', (req, res) => {
+  res.status(404).json({
+    statusCode: 404,
+    success: false,
+    message: 'File not found on server storage. Ephemeral disk cleanups on redeployment may have removed it.',
+    data: null,
+  });
+});
 
 // Health Audit Route
 app.get('/health', (req, res) => {
