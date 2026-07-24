@@ -42,7 +42,7 @@ export default function ResourceDetails({ resourceId, onBack }) {
 
   // Handle PDF download audit logging
   const handleDownload = async () => {
-    if (!resource || !resource.pdf) return;
+    if (!resource || !pdf) return;
     
     // Trigger download count increment on server (ConceptNote only)
     if (type === 'ConceptNote') {
@@ -56,8 +56,21 @@ export default function ResourceDetails({ resourceId, onBack }) {
       }
     }
     
-    // Open file in new tab
-    window.open(pdf, '_blank');
+    // Download file / open in tab programmatically
+    try {
+      if (pdf.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = pdf;
+        link.download = `${resource.title || 'document'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        window.open(pdf, '_blank');
+      }
+    } catch (err) {
+      console.error('PDF download error:', err);
+    }
   };
 
   const formatDate = (dateStr) => {

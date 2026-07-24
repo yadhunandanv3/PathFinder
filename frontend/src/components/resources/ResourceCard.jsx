@@ -21,6 +21,26 @@ export default function ResourceCard({ resource, onClick }) {
   const thumbnail = propThumbnail || resource.image || '';
   const clientAvatar = resource.clientAvatar || resource.image || '';
 
+  const handlePdfDownload = (e, fileData, filename) => {
+    if (e) e.stopPropagation();
+    if (!fileData) return;
+
+    try {
+      if (fileData.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = fileData;
+        link.download = filename || 'document.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        window.open(fileData, '_blank');
+      }
+    } catch (err) {
+      console.error('PDF download error:', err);
+    }
+  };
+
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
@@ -63,10 +83,7 @@ export default function ResourceCard({ resource, onClick }) {
           {pdf && (
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(pdf, '_blank');
-              }}
+              onClick={(e) => handlePdfDownload(e, pdf, `${title || 'document'}.pdf`)}
               className="flex items-center gap-1 text-xs font-bold text-pf-lime-text hover:text-pf-dark transition-colors duration-200"
             >
               <Download className="w-4 h-4" />
@@ -134,16 +151,13 @@ export default function ResourceCard({ resource, onClick }) {
               Read online
             </button>
             {pdf && (
-              <a
-                href={pdf}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1 text-xs font-bold text-pf-lime-text hover:text-pf-dark transition-colors duration-200"
+              <button
+                onClick={(e) => handlePdfDownload(e, pdf, `${title || 'handbook'}.pdf`)}
+                className="flex items-center gap-1 text-xs font-bold text-pf-lime-text hover:text-pf-dark transition-colors duration-200 bg-transparent border-none p-0 cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>PDF</span>
-              </a>
+              </button>
             )}
           </div>
         </div>
