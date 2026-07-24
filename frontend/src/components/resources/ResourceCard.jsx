@@ -97,7 +97,7 @@ export default function ResourceCard({ resource, onClick }) {
               className="flex items-center gap-1 text-xs font-bold text-pf-lime-text hover:text-pf-dark transition-colors duration-200"
             >
               <Download className="w-4 h-4" />
-              <span>PDF ({downloadCount})</span>
+              <span>PDF</span>
             </motion.button>
           )}
         </div>

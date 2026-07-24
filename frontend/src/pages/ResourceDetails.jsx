@@ -155,10 +155,7 @@ export default function ResourceDetails({ resourceId, onBack }) {
             </div>
 
             {pdf && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 pt-6 mt-4">
-                <span className="text-xs text-slate-400 font-bold">
-                  PDF downloaded {resource.downloadCount || 0} times.
-                </span>
+              <div className="flex justify-end border-t border-slate-100 pt-6 mt-4">
                 <button
                   onClick={handleDownload}
                   className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-pf-dark hover:bg-slate-800 text-white rounded-2xl text-xs font-bold transition-all duration-200 shadow-md"
