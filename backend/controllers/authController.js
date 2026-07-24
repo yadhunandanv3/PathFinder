@@ -12,6 +12,56 @@ const generateToken = (id, role) => {
   );
 };
 
+// @desc    Register a new user
+// @route   POST /api/auth/register
+// @access  Public
+export const register = async (req, res, next) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return next(new ApiError(400, 'Name, email, and password are required'));
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const userExists = await User.findOne({ email: cleanEmail });
+    if (userExists) {
+      return next(new ApiError(400, 'User with this email already exists'));
+    }
+
+    // Secure default assignment: Public signups are forced to SOCIAL_MEDIA_MANAGER
+    const user = await User.create({
+      name,
+      email: cleanEmail,
+      password,
+      role: 'SOCIAL_MEDIA_MANAGER',
+    });
+
+    const token = generateToken(user._id, user.role);
+
+    res.status(201).json(
+      new ApiResponse(
+        201,
+        {
+          token,
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          },
+        },
+        'User registered successfully'
+      )
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Login user
+// @route   POST /api/auth/login
+// @access  Public
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
